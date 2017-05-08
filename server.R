@@ -78,7 +78,7 @@ shinyServer(function(input, output, session) {
       paste0(values$plot_type, ".svg")
     },
     content = function(file) {
-      ggsave(file, make_plot(), device = "svg", width = 8, height = 8)
+      ggsave(file, make_plot(), device = "svg", width = input$width, height = input$height)
     }
   )
   output$dl_pdf <- downloadHandler(
@@ -86,7 +86,7 @@ shinyServer(function(input, output, session) {
       paste0(values$plot_type, ".pdf")
     },
     content = function(file) {
-      ggsave(file, make_plot(), device = "pdf", width = 8, height = 8)
+      ggsave(file, make_plot(), device = "pdf", width = input$width, height = input$height)
     }
   )
   output$dl_png <- downloadHandler(
@@ -94,7 +94,7 @@ shinyServer(function(input, output, session) {
       paste0(values$plot_type, ".png")
     },
     content = function(file) {
-      ggsave(file, make_plot(), device = "png", width = 8, height = 8)
+      ggsave(file, make_plot(), device = "png", width = input$width, height = input$height)
     }
   )
   
@@ -242,10 +242,10 @@ shinyServer(function(input, output, session) {
         xlab(paste0("logCPM in ", values$cond1)) + ylab(paste0("logCPM in ", values$cond2))
       values$plot_type <- "abundance_plot"
     }
-    p <- p + geom_point()
+    p <- p + geom_point(stroke = 0, alpha = input$alpha)
     p <- p + geom_point(data=df[df$highlight != 0, ], aes(color=highlight), size = 5)
     p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes(label=Gene_Symbol, color=highlight), size = 5)
-    p <- p + theme_bw(base_size = 16) + scale_color_manual(values = get_colors()) + guides(color = FALSE)
+    p <- p + theme_bw(base_size = 16) + guides(color = FALSE) + scale_color_manual(values = get_colors())
     
     # Enable download buttons
     enable("dl_svg")

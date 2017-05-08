@@ -34,15 +34,16 @@ app <- tabPanel("App",
   
   # Main controls panel
   div(class = "well",
-      # Upload and donwload labels
+      # Upload, download, and plot size labels
       fluidRow(class = "x-large-text",
                column(4, "Upload data"),
-               column(8, "Download data")
+               column(4, "Download data"),
+               column(4, "Downloaded plot size")
       ),
-      # Upload and download buttons
+      # Upload and download buttons and plot size selector
       fluidRow(
         column(4, fileInput('file1', label = NULL, accept = c(".txt", ".csv", ".tsv"))),
-        column(8,
+        column(4,
                div(class = "btn-group", role = "group",
                    disabled(downloadButton("dl_svg", "SVG")),
                    disabled(downloadButton("dl_pdf", "PDF")),
@@ -52,14 +53,21 @@ app <- tabPanel("App",
                    disabled(downloadButton("dl_csv", "CSV")),
                    disabled(downloadButton("dl_tsv", "TSV"))
                )
-        )
+        ),
+        column(2, numericInput("width", "Width", value = 8, min = 2, max = 25, step = .5)),
+        column(2, numericInput("height", "Height", value = 8, min = 2, max = 25, step = .5))
       ),
       
-      # Plot type selector
-      span(class = "x-large-text", "Plot type"),
+      # Plot type and transparency
+      fluidRow(
+        class = "x-large-text",
+        column(4, span("Plot type")),
+        column(4, span("Transparency"))
+      ),
       fluidRow(
         column(4, selectInput("plot_type", label = NULL,
-                              choices = list("Volcano plot" = 0, "MA plot" = 1, "Abundance plot" = 2)))
+                              choices = list("Volcano plot" = 0, "MA plot" = 1, "Abundance plot" = 2))),
+        column(4, sliderInput("alpha", NULL, min = 0, max = 1, step = 0.1, value = 0.3))
       ),
       
       # Filters
