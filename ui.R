@@ -33,70 +33,101 @@ app <- tabPanel("App",
   ),
   
   # Main controls panel
-  div(class = "well",
-      # Upload, download, and plot size labels
-      fluidRow(class = "x-large-text",
-               column(4, "Upload data"),
-               column(4, "Download data"),
-               column(4, "Downloaded plot size")
-      ),
-      # Upload and download buttons and plot size selector
-      fluidRow(
-        column(4, fileInput('file1', label = NULL, accept = c(".txt", ".csv", ".tsv"))),
-        column(4,
-               div(class = "btn-group", role = "group",
-                   disabled(downloadButton("dl_svg", "SVG")),
-                   disabled(downloadButton("dl_pdf", "PDF")),
-                   disabled(downloadButton("dl_png", "PNG"))
-               ),
-               div(class = "btn-group", role = "group",
-                   disabled(downloadButton("dl_csv", "CSV")),
-                   disabled(downloadButton("dl_tsv", "TSV"))
-               )
+  tabsetPanel(
+    tabPanel("Input",
+      div(class = "well",
+        # Upload, download, and plot size labels
+        fluidRow(class = "x-large-text",
+                 column(4, "Upload data")
         ),
-        column(2, numericInput("width", "Width", value = 8, min = 2, max = 25, step = .5)),
-        column(2, numericInput("height", "Height", value = 8, min = 2, max = 25, step = .5))
-      ),
-      
-      # Plot type and transparency
-      fluidRow(
-        class = "x-large-text",
-        column(4, span("Plot type")),
-        column(4, span("Transparency"))
-      ),
-      fluidRow(
-        column(4, selectInput("plot_type", label = NULL,
-                              choices = list("Volcano plot" = 0, "MA plot" = 1, "Abundance plot" = 2))),
-        column(4, sliderInput("alpha", NULL, min = 0, max = 1, step = 0.1, value = 0.3))
-      ),
-      
-      # Filters
-      span(class = "x-large-text", "Filter data"),
-      fluidRow(
-        column(4, numericInput("FDR", 0.25, min = 0, max = 1, step = 0.05, label = "FDR")),
-        column(4, numericInput("FC", 0, min = 0, step = 0.1, label = "logFC")),
-        column(4, numericInput("CPM", 0, min = 0, step = 0.1, label = "logCPM"))
-      ),
-      
-      # Highlight genesets
-      span(class = "x-large-text", "Highlight genesets"),
-      fluidRow(id = "geneset_container1",
-               column(8, textInput("geneset1", label = "Geneset", width = "100%")),
-               column(4, colourInput("color1", label = "Color", value = "#0000FF", showColour = "background", palette = "limited"))
-      ),
-      fluidRow(id = "change_geneset",
-               column(4, 
-                      actionButton("add_geneset", "Add geneset"),
-                      disabled(actionButton("rm_geneset", "Remove geneset"))
-               ),
-               column(4, radioButtons("search_style", NULL, choices = list("Exact match" = "exact", "Regex match" = "regex"), inline = TRUE))
-      ),
-      
-      # Run button
-      fluidRow(
-        column(4, offset = 4,
-               disabled(actionButton("run", "Update plot", class="btn btn-primary btn-lg btn-block")))
+        # Upload and download buttons and plot size selector
+        fluidRow(
+          column(4, fileInput('file1', label = NULL, accept = c(".txt", ".csv", ".tsv")))
+        ),
+        
+        # Plot type and transparency
+        fluidRow(
+          class = "x-large-text",
+          column(4, span("Plot type"))
+        ),
+        fluidRow(
+          column(4, selectInput("plot_type", label = NULL,
+                                choices = list("Volcano plot" = 0, "MA plot" = 1, "Abundance plot" = 2)))
+        ),
+        
+        # Filters
+        span(class = "x-large-text", "Filter data"),
+        fluidRow(
+          column(4, numericInput("FDR", 0.25, min = 0, max = 1, step = 0.05, label = "FDR")),
+          column(4, numericInput("FC", 0, min = 0, step = 0.1, label = "logFC")),
+          column(4, numericInput("CPM", 0, min = 0, step = 0.1, label = "logCPM"))
+        ),
+        
+        # Highlight genesets
+        span(class = "x-large-text", "Highlight genesets"),
+        fluidRow(id = "geneset_container1",
+                 column(8, textInput("geneset1", label = "Geneset", width = "100%")),
+                 column(4, colourInput("color1", label = "Color", value = "#0000FF", showColour = "background", palette = "limited"))
+        ),
+        fluidRow(id = "change_geneset",
+                 column(4, 
+                        actionButton("add_geneset", "Add geneset"),
+                        disabled(actionButton("rm_geneset", "Remove geneset"))
+                 ),
+                 column(4, radioButtons("search_style", NULL, choices = list("Exact match" = "exact", "Regex match" = "regex"), inline = TRUE))
+        )
       )
+    ),
+    tabPanel("Output options",
+      div(class = "well",
+        fluidRow(class = "x-large-text",
+          column(4, "Download plot"),
+          column(4, "Downloaded table")
+        ),
+        fluidRow(
+          column(4,
+            div(class = "btn-group", role = "group",
+              disabled(downloadButton("dl_svg", "SVG")),
+              disabled(downloadButton("dl_pdf", "PDF")),
+              disabled(downloadButton("dl_png", "PNG"))
+            )
+          ),
+          column(4,
+            div(class = "btn-group", role = "group",
+              disabled(downloadButton("dl_csv", "CSV")),
+              disabled(downloadButton("dl_tsv", "TSV"))
+            )
+          )
+        ),
+        br(),
+        span(class = "x-large-text", "Plot size"),
+        fluidRow(
+          column(4, numericInput("width", "Width (in.)", value = 8, min = 0, step = .5)),
+          column(4, numericInput("height", "Height (in.)", value = 8, min = 0, step = .5)),
+          column(4, numericInput("dpi", "Resolution (dpi)", value = 300, min = 0, step = 25))
+        ),
+        span(class = "x-large-text", "Point options"),
+        fluidRow(
+          column(4, numericInput("point_size", "Size", min = 0, step = 0.5, value = 1)),
+          column(4, numericInput("highlight_point_size", "Highlight Size", min = 0, step = 0.5, value = 5)),
+          column(4, numericInput("alpha", "Transparency", min = 0, max = 1, step = 0.1, value = 0.3))
+        ),
+        fluidRow(class = "x-large-text",
+          column(4, "Text size"),
+          column(4, offset = 4, "Grid")
+        ),
+        fluidRow(
+          column(4, numericInput("plot_text_size", "Plot text size", min = 0, step = 2, value = 16)),
+          column(4, numericInput("gene_text_size", "Highlight text size", min = 0, step = 2, value = 5)),
+          column(4, radioButtons("grids", NULL, list("Show" = "show", "Hide" = "hide"), selected = "show"))
+        )
+      )
+    )
+  ),
+  # Run button
+  fluidRow(
+    column(4, offset = 4,
+           disabled(actionButton("run", "Update plot", class="btn btn-primary btn-lg btn-block")))
   ),
   br(),
   
@@ -104,7 +135,7 @@ app <- tabPanel("App",
   uiOutput("up_down"),
   
   # Plot
-  plotOutput("plot", height = "8in"),
+  imageOutput("plot", height = "auto"),
   
   # Data table
   dataTableOutput("data_table"),

@@ -226,26 +226,49 @@ shinyServer(function(input, output, session) {
   })
   
   # Create the plot only when run button is pressed
-  output$plot <- renderPlot({make_plot()})
-  make_plot <- eventReactive(input$run, {
-    df <- data()
-    df$significant <- filter()
-    df$highlight <- highlight()
-    if (input$plot_type == 0) {
+  output$plot <- renderImage({
+    cat("HI\n")
+    outfile <- tempfile(fileext = ".png")
+    
+    width_px <- input$width * input$dpi
+    height_px <- input$height * input$dpi
+    
+    p <- make_plot(data(), filter(), highlight(), input$plot_type, values$cond1, values$cond2, input$alpha, input$point_size, input$highlight_point_size, input$gene_text_size, input$plot_text_size, get_colors(), input$grids)
+    ggsave(outfile, plot=p, device = "png", width = input$width, height = input$height, dpi = input$dpi)
+    
+    # Scale width to page if its bigger than the page, scale height by aspect ratio
+    width_px <- min(input$width * input$dpi, session$clientData$output_plot_width)
+    height_px <- width_px * input$height / input$width
+    
+    list(
+      src = outfile,
+      contentType = 'image/png',
+      width = width_px,
+      height = height_px
+    )
+  }, deleteFile = TRUE)
+  
+  make_plot <- function(df, filter, highlight, plot_type, cond1, cond2, alpha, point_size, highlight_point_size, gene_text_size, plot_text_size, colors, grids) {
+    df$significant <- filter
+    df$highlight <- highlight
+    if (plot_type == 0) {
       p <- ggplot(df, aes(x = logFC, y = -log10(PValue), color = significant))
       values$plot_type <- "volcano_plot"
-    } else if (input$plot_type == 1) {
+    } else if (plot_type == 1) {
       p <- ggplot(df, aes(x = logCPM, y = logFC , color = significant))
       values$plot_type <- "MA_plot"
     } else {
-      p <- ggplot(df, aes_string(x = values$cond1, y = values$cond2, color = "significant")) + 
-        xlab(paste0("logCPM in ", values$cond1)) + ylab(paste0("logCPM in ", values$cond2))
+      p <- ggplot(df, aes_string(x = cond1, y = cond2, color = significant)) + 
+        xlab(paste0("logCPM in ", cond1)) + ylab(paste0("logCPM in ", cond2))
       values$plot_type <- "abundance_plot"
     }
-    p <- p + geom_point(stroke = 0, alpha = input$alpha)
-    p <- p + geom_point(data=df[df$highlight != 0, ], aes(color=highlight), size = 5)
-    p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes(label=Gene_Symbol, color=highlight), size = 5)
-    p <- p + theme_bw(base_size = 16) + guides(color = FALSE) + scale_color_manual(values = get_colors())
+    p <- p + geom_point(stroke = 0, alpha = alpha, size = point_size)
+    p <- p + geom_point(data=df[df$highlight != 0, ], aes(color=highlight), size = highlight_point_size)
+    p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes(label=Gene_Symbol, color=highlight), size = gene_text_size)
+    p <- p + theme_bw(base_size = plot_text_size) + guides(color = FALSE) + scale_color_manual(values = colors)
+    if (grids == "hide") {
+      p <- p + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+    }
     
     # Enable download buttons
     enable("dl_svg")
@@ -254,8 +277,9 @@ shinyServer(function(input, output, session) {
     enable("dl_csv")
     enable("dl_tsv")
     
+    cat("INSIDE\n")
     return(p)
-  })
+  }
   
   # Create the table
   output$data_table <- renderDataTable(data()[filter(), ])
