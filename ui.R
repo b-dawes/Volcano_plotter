@@ -58,9 +58,9 @@ app <- tabPanel("App",
         # Filters
         span(class = "x-large-text", "Filter data"),
         fluidRow(
-          column(4, numericInput("FDR", 0.25, min = 0, max = 1, step = 0.05, label = "FDR")),
-          column(4, numericInput("FC", 0, min = 0, step = 0.1, label = "logFC")),
-          column(4, numericInput("CPM", 0, min = 0, step = 0.1, label = "logCPM"))
+          column(4, numericInput("FDR", 0.25, min = 0, max = 1, step = "any", label = "FDR")),
+          column(4, numericInput("FC", 0, min = 0, step = "any", label = "logFC")),
+          column(4, numericInput("CPM", 0, min = 0, step = "any", label = "logCPM"))
         ),
         
         # Highlight genesets
@@ -78,11 +78,11 @@ app <- tabPanel("App",
         )
       )
     ),
-    tabPanel("Output options",
+    tabPanel("Formatting options",
       div(class = "well",
         fluidRow(class = "x-large-text",
           column(4, "Download plot"),
-          column(4, "Downloaded table")
+          column(4, "Download table")
         ),
         fluidRow(
           column(4,
@@ -102,24 +102,26 @@ app <- tabPanel("App",
         br(),
         span(class = "x-large-text", "Plot size"),
         fluidRow(
-          column(4, numericInput("width", "Width (in.)", value = 8, min = 0, step = .5)),
-          column(4, numericInput("height", "Height (in.)", value = 8, min = 0, step = .5)),
-          column(4, numericInput("dpi", "Resolution (dpi)", value = 300, min = 0, step = 25))
+          column(4, numericInput("width", "Width (in.)", value = 4, min = 0, step = "any")),
+          column(4, numericInput("height", "Height (in.)", value = 4, min = 0, step = "any")),
+          column(4, numericInput("dpi", "Resolution (dpi)", value = 300, min = 0, step = "any"))
         ),
         span(class = "x-large-text", "Point options"),
         fluidRow(
-          column(4, numericInput("point_size", "Size", min = 0, step = 0.5, value = 1)),
-          column(4, numericInput("highlight_point_size", "Highlight Size", min = 0, step = 0.5, value = 5)),
-          column(4, numericInput("alpha", "Transparency", min = 0, max = 1, step = 0.1, value = 0.3))
+          column(4, numericInput("point_size", "Size", min = 0, step = "any", value = 1)),
+          column(4, numericInput("highlight_point_size", "Highlight size", min = 0, step = "any", value = 2)),
+          column(4, numericInput("alpha", "Transparency", min = 0, max = 1, step = "any", value = 0.3))
         ),
-        fluidRow(class = "x-large-text",
-          column(4, "Text size"),
-          column(4, offset = 4, "Grid")
-        ),
+        span(class = "x-large-text", "Text size"),
         fluidRow(
-          column(4, numericInput("plot_text_size", "Plot text size", min = 0, step = 2, value = 16)),
-          column(4, numericInput("gene_text_size", "Highlight text size", min = 0, step = 2, value = 5)),
-          column(4, radioButtons("grids", NULL, list("Show" = "show", "Hide" = "hide"), selected = "show"))
+          column(4, numericInput("plot_text_size", "Plot text size", min = 0, step = "any", value = 12)),
+          column(4, numericInput("gene_text_size", "Highlight text size", min = 0, step = "any", value = 2))
+        ),
+        span(class = "x-large-text", "Miscellaneous options"),
+        fluidRow(
+          column(4, checkboxInput("scale_plot", "Scale large plots to page width", value = TRUE)),
+          column(4, checkboxInput("show_labels", "Label highlighted genes", value = TRUE)),
+          column(4, checkboxInput("show_grid", "Show grid", value = TRUE))
         )
       )
     )
