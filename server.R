@@ -6,6 +6,7 @@ library(svglite)
 library(colourpicker)
 
 options(shiny.maxRequestSize=20*1024^2)
+
 shinyServer(function(input, output, session) {
   # Global variables
   values <- reactiveValues(ran = FALSE, num_genesets = 1, cond1 = NULL, cond2 = NULL, plot_type = "volcano_plot") 
@@ -94,7 +95,7 @@ shinyServer(function(input, output, session) {
       paste0(values$plot_type, ".png")
     },
     content = function(file) {
-      ggsave(file, make_plot(), device = "png", width = input$width, height = input$height, dpi = input$dpi)
+      ggsave(file, make_plot(), device = "png", width = input$width, height = input$height, dpi = input$dpi, type = "cairo")
     }
   )
   
@@ -184,11 +185,6 @@ shinyServer(function(input, output, session) {
   get_colors <- eventReactive(input$run, {
     colors <- c()
     
-    # Don't run if there are no genesets, does weird things if removed
-    if (values$num_genesets <= 0) {
-      return(c("grey", "red2"))
-    }
-    
     for (i in 1:values$num_genesets) {
       # Ignore genesets with no highlighted genes
       if (! i %in% highlight()) {
@@ -196,7 +192,6 @@ shinyServer(function(input, output, session) {
       }
       colors <- append(colors, input[[sprintf("color%d", i)]])
     }
-    colors <- append(colors, c("grey", "red2"))
 
     return(colors)
   })
@@ -233,7 +228,7 @@ shinyServer(function(input, output, session) {
     height_px <- input$height * input$dpi
     
     p <- make_plot()
-    ggsave(outfile, plot=p, device = "png", width = input$width, height = input$height, dpi = input$dpi)
+    ggsave(outfile, plot=p, device = "png", width = input$width, height = input$height, dpi = input$dpi, type = "cairo")
     
     # Scale width to page if its bigger than the page if its checked, scale height by aspect ratio
     width_px <- min(input$width * input$dpi, session$clientData$output_plot_width)
@@ -251,21 +246,31 @@ shinyServer(function(input, output, session) {
     df <- data()
     df$significant <- filter()
     df$highlight <- highlight()
+    
+    non_sig_df <- df[!filter(), ]
+    sig_df <- df[filter(), ]
+    
+    p <- ggplot()
     if (input$plot_type == 0) {
-      p <- ggplot(df, aes(x = logFC, y = -log10(PValue), color = significant))
+      x_var = "logFC"
+      y_var = "-log10(PValue)"
       values$plot_type <- "volcano_plot"
     } else if (input$plot_type == 1) {
-      p <- ggplot(df, aes(x = logCPM, y = logFC , color = significant))
+      x_var = "logCPM"
+      y_var = "logFC"
       values$plot_type <- "MA_plot"
     } else {
-      p <- ggplot(df, aes_string(x = values$cond1, y = values$cond2, color = "significant")) + 
-        xlab(paste0("logCPM in ", values$cond1)) + ylab(paste0("logCPM in ", values$cond2))
+      x_var = values$cond1
+      y_var = values$cond2
+      p <- p + xlab(paste0("logCPM in ", values$cond1)) + ylab(paste0("logCPM in ", values$cond2))
       values$plot_type <- "abundance_plot"
     }
-    p <- p + geom_point(stroke = 0, alpha = input$alpha, size = input$point_size)
-    p <- p + geom_point(data=df[df$highlight != 0, ], aes(color=highlight), size = input$highlight_point_size)
+    
+    p <- p + geom_point(data = non_sig_df, aes_string(x = x_var, y = y_var), alpha = input$alpha, stroke = 0, size = input$point_size, color = "grey")
+    p <- p + geom_point(data = sig_df, aes_string(x = x_var, y = y_var), alpha = input$alpha, stroke = 0, size = input$point_size, color = "red2")
+    p <- p + geom_point(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, color="highlight"), size = input$highlight_point_size)
     if (input$show_labels) {
-      p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes(label=Gene_Symbol, color=highlight), size = input$gene_text_size)
+      p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
     }
     p <- p + theme_bw(base_size = input$plot_text_size) + guides(color = FALSE) + scale_color_manual(values = get_colors())
     
