@@ -268,9 +268,13 @@ shinyServer(function(input, output, session) {
     
     p <- p + geom_point(data = non_sig_df, aes_string(x = x_var, y = y_var), alpha = input$alpha, stroke = 0, size = input$point_size, color = "grey")
     p <- p + geom_point(data = sig_df, aes_string(x = x_var, y = y_var), alpha = input$alpha, stroke = 0, size = input$point_size, color = "red2")
-    p <- p + geom_point(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, color="highlight"), size = input$highlight_point_size)
+    p <- p + geom_point(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, color="highlight"), stroke = 0, size = input$highlight_point_size)
     if (input$show_labels) {
-      p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
+      if (input$pad_labels) {
+        p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
+      } else {
+        p <- p + geom_text_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
+      }
     }
     p <- p + theme_bw(base_size = input$plot_text_size) + guides(color = FALSE) + scale_color_manual(values = get_colors())
     

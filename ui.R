@@ -119,9 +119,10 @@ app <- tabPanel("App",
         ),
         span(class = "x-large-text", "Miscellaneous options"),
         fluidRow(
-          column(4, checkboxInput("scale_plot", "Scale large plots to page width", value = TRUE)),
-          column(4, checkboxInput("show_labels", "Label highlighted genes", value = TRUE)),
-          column(4, checkboxInput("show_grid", "Show grid", value = TRUE))
+          column(3, checkboxInput("scale_plot", "Scale large plots to page width", value = TRUE)),
+          column(3, checkboxInput("show_labels", "Label highlighted genes", value = TRUE)),
+          column(3, checkboxInput("pad_labels", "Pad highlighted gene labels", value = TRUE)),
+          column(3, checkboxInput("show_grid", "Show grid", value = TRUE))
         )
       )
     )
