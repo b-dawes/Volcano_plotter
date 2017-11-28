@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library(DT)
 library(ggplot2)
 library(ggrepel)
 library(svglite)
@@ -10,10 +11,8 @@ contact <- div(class = "text-center",
                hr(),
                "This app was made by Brian Dawes for ",
                a(href = "http://www.evanrosenlab.net/", "Evan Rosen's lab"),
-               "at BIDMC.",
-               br(),
-               "Please send any questions or comments to ",
-               a(href = "mailto:bdawes@broadinstitute.org", "bdawes@broadinstitute.org")
+               "at BIDMC. The source code can be found on ",
+               a(href = "https://github.com/rosen-lab/Volcano_plotter", "github")
 )
 
 # Define app tab
@@ -175,8 +174,9 @@ about <- tabPanel("About",
 			<li>PValue</li>
 			<li>FDR</li>
 		</ul>
-		<p>Additionally, if fields beginning with Cond1_ and Cond2_ are present, these will be interpreted as logCPM values for the two conditions being compared. For example, if you have conditions WT and KO you should have fields named Cond1_WT and Cond2_KO. If these fields are not present, you will not be able to generate gene abundance plots.</p>
-		<h2><a name=\"plotting\">Plotting</a></h2>
+		<p>Additionally, if fields beginning with Cond1_ and Cond2_ are present, these will be interpreted as logCPM values for the two conditions being compared. For example, if you have conditions WT and KO you should have fields named Cond1_WT and Cond2_KO. If these fields are not present, you will not be able to generate gene abundance plots. Any additional fields will be preserved in the data table.</p>
+		<p>For our lab's convenience, if all genes contain the <code>|</code> character, gene names will be split on this character. The first half of the name will be considered a UCSC ID and the second will be considered the gene name to be used in filtering.
+    <h2><a name=\"plotting\">Plotting</a></h2>
 		<p>Once the data is uploaded, hit the update plot button to generate a plot. The specific type of plot is determined by the option selected from the plot type dropdown menu. The possibilities are:</p>
 		<ul>
 			<li><strong>Volcano plot:</strong> This plot has logFC values on the x-axis and -log10(PValues) on the y axis.</li>
@@ -194,8 +194,8 @@ about <- tabPanel("About",
 		</ul>
 		<p>Filters will not apply until the update plot button is clicked. Significant genes are highlighted in red in plots and are displayed in the table. The total number of significant genes, as well as the number of up and down regulated genes are displayed above the plot.</p>
 		<h2><a name=\"genesets\">Adding genesets</a></h2>
-		<p>Volcano Plotter allows you to input a gene or a list of multiple genes to highlight in the plots. Gene names are determined by the genes field of the uploaded file (see <a href=\"#upload\"> upload format</a>). Highlighted genes are colored and labeled in the plot. To enter a geneset, use the geneset field under the highlight genesets header. To enter multiple genes, separate them with commas. Spaces around the comma are ignored. For example, a geneset might look like \"IL6, IL10, IL18\".</p>
-		<p>The search mode for genes can be switched between exact match and regex match. In exact match mode, the app will search for a case-insensitive exact match. In regex match mode, the app will search using case insensitive perl style regular expressions. For example, in regex match mode \"^IL\\d\\d*$\" will return every gene starting with IL followed by one or more digit and nothing else.</p>
+		<p>Volcano Plotter allows you to input a gene or a list of multiple genes to highlight in the plots. Gene names are determined by the genes field of the uploaded file (see <a href=\"#upload\"> upload format</a>). Highlighted genes are colored and labeled in the plot. To enter a geneset, use the geneset field under the highlight genesets header. To enter multiple genes, separate them with commas. Spaces around the comma are ignored. For example, a geneset might look like <code>IL6, IL10, IL18</code>.</p>
+		<p>The search mode for genes can be switched between exact match and regex match. In exact match mode, the app will search for a case-insensitive exact match. In regex match mode, the app will search using case insensitive perl style regular expressions. For example, in regex match mode <code>^IL\\d\\d*$</code> will return every gene starting with IL followed by one or more digit and nothing else.</p>
 		<p>Multiple different genesets can be entered and colored differently using the add and remove geneset buttons. The color of each geneset can be changed by clicking on the color field. By default, the first four genesets are blue, orange, green, then purple. All further genesets default to black. Any gene that is found in multiple genesets will only</p>
 		<h2><a name=\"table\">Table</a></h2>
 		<p>When the update plot button is clicked, an interactive table containing all the significant genes is generated below the plot. This table will contain all the fields in the input file, not just those required to run the app (see <a href=\"#upload\">upload format</a>). All the fields can be searched in the table using the top search box, while find can be searched individually using the bottom search boxes. The table can be filtered on each field by clicking on the table headers.</p>

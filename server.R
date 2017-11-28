@@ -9,7 +9,7 @@ options(shiny.maxRequestSize=20*1024^2)
 
 shinyServer(function(input, output, session) {
   # Global variables
-  values <- reactiveValues(ran = FALSE, num_genesets = 1, cond1 = NULL, cond2 = NULL, plot_type = "volcano_plot") 
+  values <- reactiveValues(ran = FALSE, num_genesets = 1, cond1 = NULL, cond2 = NULL, plot_type = "volcano_plot", number_up = 0, number_down = 0) 
   
   # Load input file into data()
   data <- reactive({
@@ -38,19 +38,11 @@ shinyServer(function(input, output, session) {
       }
     }
     
-    # Reset values in case a new file is uploaded
-    has_conds <- FALSE
-    
-    # Split UCSC id and gene symbol
-    split_genes <- t(as.data.frame(strsplit(data$genes, "\\|")))
-    data$UCSC_ID <- split_genes[, 1]
-    data$Gene_Symbol <- split_genes[, 2]
-
-    # Remove genes and reorder columns
-    data$genes <- NULL
-    data <- data[, c(ncol(data), ncol(data)-1, 1:(ncol(data)-2))]
+    # Turn off old filters
+    filter <- rep(FALSE, nrow(data)) 
     
     # Check if conditions are present
+    has_conds <- FALSE
     if (any(grepl("^Cond1_", colnames(data))) && any(grepl("^Cond2_", colnames(data)))) {
       has_conds <- TRUE
       index1 = grep("^Cond1_", colnames(data))[1]
@@ -60,9 +52,36 @@ shinyServer(function(input, output, session) {
       colnames(data)[index1] = values$cond1
       colnames(data)[index2] = values$cond2
     }
+
+    # Split UCSC id and gene symbol if present
+    if (all(grepl("\\|", data$genes))) {
+      split_genes <- t(as.data.frame(strsplit(data$genes, "\\|")))
+      data$UCSC_ID <- split_genes[, 1]
+      data$genes <- split_genes[, 2]  
+    } 
+    
+    # Reorder columns
+    if (is.null(data$UCSC_ID)) {
+      if (has_conds) {
+        order <- c("genes", "logFC", "logCPM", "PValue", "FDR", values$cond1, values$cond2)
+      } else {
+        order <- c("genes", "logFC", "logCPM", "PValue", "FDR")
+      }
+    } else {
+      if (has_conds) {
+        order <- c("genes", "UCSC_ID", "logFC", "logCPM", "PValue", "FDR", values$cond1, values$cond2)
+      } else {
+        order <- c("genes", "UCSC_ID", "logFC", "logCPM", "PValue", "FDR")      
+      }
+    }
+    # Keep any additional columns
+    order <- c(order, names(data)[!names(data) %in% order])
+    data <- data[, order]
+    names(data)[1] <- "Gene"
     
     # Enable run button
     enable("run")
+    
     # Determine what plot types are allowed
     if (has_conds) {
       updateSelectInput(session, "plot_type", choices = list("Volcano plot" = 0, "MA plot" = 1, "Abundance plot" = 2))
@@ -154,23 +173,20 @@ shinyServer(function(input, output, session) {
   
   # Render up/down regulated genes
   output$up_down <- renderUI({
-    number_up <- nrow(data()[filter() & data()$logFC>0, ])
-    number_down <- nrow(data()[filter() & data()$logFC<0, ])
-    
     div(class = "panel panel-default",
         div(class = "panel-heading large-text", "Significant genes"),
         fluidRow(class = "large-text text-center",
                  column(4, 
                         span(class="glyphicon glyphicon-arrow-up", style = "color:blue"),
                         span(class="glyphicon glyphicon-arrow-down", style = "color:blue"),
-                        paste0(number_up + number_down, " total")),
+                        paste0(values$number_up + values$number_down, " total")),
                  column(4, 
                         span(class="glyphicon glyphicon-arrow-up", style = "color:green"),
-                        paste0(number_up, " up regulated")
+                        paste0(values$number_up, " up regulated")
                  ),
                  column(4, 
                         span(class="glyphicon glyphicon-arrow-down", style = "color:red"),
-                        paste0(number_down, " down regulated")
+                        paste0(values$number_down, " down regulated")
                  )
         )
     )
@@ -205,13 +221,13 @@ shinyServer(function(input, output, session) {
       genes <- unlist(strsplit(genes, "(\\s)*,(\\s)*"))
       if (input$search_style == "exact") {
         genes <- toupper(genes)
-        out[toupper(data()$Gene_Symbol) %in% genes] <- i
+        out[toupper(data()$Gene) %in% genes] <- i
       } else {
         for (j in 1:length(genes)) {
           if (length(genes[j]) == 0) {
             next
           }
-          found <- grepl(genes[j], data()$Gene_Symbol, ignore.case = TRUE, perl = TRUE)
+          found <- grepl(genes[j], data()$Gene, ignore.case = TRUE, perl = TRUE)
           out[found] <- i
         }
       }
@@ -250,6 +266,9 @@ shinyServer(function(input, output, session) {
     non_sig_df <- df[!filter(), ]
     sig_df <- df[filter(), ]
     
+    values$number_up <- nrow(sig_df[sig_df$logFC > 0, ])
+    values$number_down <- nrow(sig_df[sig_df$logFC < 0, ])
+    
     p <- ggplot()
     if (input$plot_type == 0) {
       x_var = "logFC"
@@ -271,9 +290,9 @@ shinyServer(function(input, output, session) {
     p <- p + geom_point(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, color="highlight"), stroke = 0, size = input$highlight_point_size)
     if (input$show_labels) {
       if (input$pad_labels) {
-        p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
+        p <- p + geom_label_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene", color="highlight"), size = input$gene_text_size)
       } else {
-        p <- p + geom_text_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene_Symbol", color="highlight"), size = input$gene_text_size)
+        p <- p + geom_text_repel(data=df[df$highlight != 0, ], aes_string(x = x_var, y = y_var, label="Gene", color="highlight"), size = input$gene_text_size)
       }
     }
     p <- p + theme_bw(base_size = input$plot_text_size) + guides(color = FALSE) + scale_color_manual(values = get_colors())
@@ -293,6 +312,6 @@ shinyServer(function(input, output, session) {
   })
   
   # Create the table
-  output$data_table <- renderDataTable(data()[filter(), ])
+  output$data_table <- renderDataTable(datatable(data()[filter(), ], filter = "top", options = list(pageLength = 20), rownames = FALSE))
       
 })
